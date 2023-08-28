@@ -355,7 +355,7 @@ void PDFDraggableTool::drawGradient(QPainter& painter, const QRect& outline, QCo
 		color.setAlpha(64);
 
 		// A rectangular shadow is constructed by drawing
-		// four quarter circles at the corners, and 
+		// four quarter circles at the corners, and
 		// linking them with four rectangles.
 
 		// limit draw region at the four edges to construct
@@ -453,27 +453,27 @@ void PDFMagnifier::paintEvent(QPaintEvent *event)
 			// circular magnifier with transparent shadow
 			const int shadowWidth=13;
 			const int magnifierWidth = side - 2*shadowWidth + 2;
-	
+
 			// draw transparent shadow
 			QRect outline(width() / 2 - side / 2 + 1, height() / 2 - side / 2 + 1, side - 2, side - 2);
 			drawGradient(painter, outline, QColor(Qt::black), shadowWidth, globalConfig->magnifierShape);
-	
+
 			borderPath.addRoundedRect(
-				width()/2 - side/2 + shadowWidth - 2, 
+				width()/2 - side/2 + shadowWidth - 2,
 				height()/2 - side/2 + shadowWidth - 5, // magnifier moved upwards for 3D effect
-				magnifierWidth, 
-				magnifierWidth, 
-				magnifierWidth/2, 
+				magnifierWidth,
+				magnifierWidth,
+				magnifierWidth/2,
 				magnifierWidth/2
 			);
 		} else {
 			// rectangular magnifier with transparent shadow
 			const int shadowWidth = 7;
-	
+
 			// draw transparent shadow
 			QRect outline(0, 0, width(), height());
 			drawGradient(painter, outline, QColor(Qt::black), shadowWidth, globalConfig->magnifierShape);
-	
+
 			borderPath.addRect(5, 5, width() - shadowWidth - 3, height() - shadowWidth - 6);
 
 		}
@@ -481,13 +481,13 @@ void PDFMagnifier::paintEvent(QPaintEvent *event)
 		if(globalConfig->magnifierShape == PDFDocumentConfig::Circle) {
 			// circular magnifier without shadow
 			const int magnifierWidth = side - 4;
-	
+
 			borderPath.addRoundedRect(
-				width()/2 - side/2 + 2, 
-				height()/2 - side/2 + 2, 
-				magnifierWidth, 
-				magnifierWidth, 
-				magnifierWidth/2, 
+				width()/2 - side/2 + 2,
+				height()/2 - side/2 + 2,
+				magnifierWidth,
+				magnifierWidth,
+				magnifierWidth/2,
 				magnifierWidth/2
 			);
 		} else {
@@ -1595,7 +1595,7 @@ bool PDFWidget::event(QEvent *event)
 		return gestureEvent(static_cast<QGestureEvent *>(event));
 	return QLabel::event(event);
 	#endif
-	
+
 	// pinch zoom fix for macOS
 	#ifdef Q_OS_MAC
 	switch (event->type()) {
@@ -4327,6 +4327,26 @@ void PDFDocument::zoomSliderChange(int pos)
 	widget()->zoom(zoomSliderPosToScale(pos));
 }
 
+QString PDFDocument::getPdfPageLabel(int page1, int page2) {
+    std::unique_ptr<Poppler::Page> pdfPage1 = document->page(page1 - 1);
+    std::unique_ptr<Poppler::Page> pdfPage2 = document->page(page2 - 1);
+
+    if (!pdfPage1 || pdfPage1->label().isNull()) {
+        return {};
+    }
+
+    if (!pdfPage2 || pdfPage2->label().isNull()) {
+        if (QString::number(page1) == pdfPage1->label()) {
+            return {};
+        }
+        return QString(" (%1)").arg(pdfPage1->label());
+    }
+
+    if (QString::number(page1) == pdfPage1->label() && QString::number(page2) == pdfPage2->label()) {
+        return {};
+    }
+    return tr(" (%1 to %2)").arg(pdfPage1->label(), pdfPage2->label());
+}
 
 void PDFDocument::showPage(int page)
 {
@@ -4336,8 +4356,11 @@ void PDFDocument::showPage(int page)
 	if (p < 1)
 		p = 1;
 	int p2 = page + pdfWidget->visiblePages() - 1;
-	if (pdfWidget->visiblePages() <= 1) pageLabel->setText(tr("Page %1 of %2").arg(p).arg(pdfWidget->realNumPages()));
-	else pageLabel->setText(tr("Pages %1 to %2 of %3").arg(p).arg(p2).arg(pdfWidget->realNumPages()));
+    if (pdfWidget->visiblePages() <= 1) {
+        pageLabel->setText(tr("Page %1%2 of %3").arg(p).arg(getPdfPageLabel(p)).arg(pdfWidget->realNumPages()));
+    } else {
+        pageLabel->setText(tr("Pages %1 to %2%3 of %4").arg(p).arg(p2).arg(getPdfPageLabel(p, p2)).arg(pdfWidget->realNumPages()));
+    }
 	pageCountLabel->setText(QString("%1").arg(pdfWidget->realNumPages()));
 
 	leCurrentPage->setText(QString("%1").arg(p));

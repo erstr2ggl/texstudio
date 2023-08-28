@@ -337,7 +337,7 @@ private:
 	int docPages;
 	qreal			saveScaleFactor;
 	autoScaleOption	saveScaleOption;
-	
+
 	qreal pinchZoomXPos;
 	qreal pinchZoomYPos;
 
@@ -565,6 +565,8 @@ private:
 
 	qreal zoomSliderPosToScale(int pos);
 	int scaleToZoomSliderPos(qreal scale);
+
+    QString getPdfPageLabel(int page1, int page2 = -1);
 
 	QString curFile, curFileUnnormalized;
 	qint64 curFileSize;
